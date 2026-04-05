@@ -14,7 +14,7 @@ $query = "SELECT
             p.product_name, 
             il.type, 
             il.quantity, 
-            il.reason, 
+            il.remarks,  -- Changed from il.reason to il.remarks
             il.created_at 
           FROM inventory_logs il 
           JOIN products p ON il.product_id = p.id 

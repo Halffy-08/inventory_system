@@ -41,6 +41,13 @@ require_once "../add_products/dym.php";
 <body>
     <div class="container">
         <aside class="sidebar">
+            <div class="sidebar-search" style="padding: 10px 15px;">
+                <div style="position: relative; display: flex; align-items: center; background: rgba(255,255,255,0.1); border-radius: 8px; padding: 5px 10px;">
+                    <i class="fa-solid fa-magnifying-glass" style="color: #bdc3c7; font-size: 0.8rem;"></i>
+                    <input type="text" id="menuSearch" placeholder="Search menu..." onkeyup="filterMenu()" 
+                     style="background: none; border: none; color: white; outline: none; margin-left: 10px; width: 100%; font-size: 0.85rem;">
+                </div>
+            </div>
             <div class="sidebar-header"><i class="fa-solid fa-boxes-stacked"></i> <span>Admin Panel</span></div>
            <nav style="flex-grow: 1;">
                 <a href="index.php" class="nav-item active"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a>

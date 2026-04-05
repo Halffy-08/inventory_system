@@ -5,8 +5,25 @@ function e($value) {
     return htmlspecialchars($value ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+// 1. Capture the search term from the URL
+$search = $_GET['search'] ?? '';
+
 try {
-    $stmt = $pdo->query("SELECT id, product_name, category, price, quantity, max_quantity FROM products ORDER BY id ASC");
+    // 2. Update SQL to handle the search logic
+    if (!empty($search)) {
+        $sql = "SELECT id, product_name, category, price, quantity, max_quantity 
+                FROM products 
+                WHERE product_name LIKE :search 
+                OR category LIKE :search 
+                ORDER BY id ASC";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['search' => "%$search%"]);
+    } else {
+        $sql = "SELECT id, product_name, category, price, quantity, max_quantity 
+                FROM products 
+                ORDER BY id ASC";
+        $stmt = $pdo->query($sql);
+    }
     $all_products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     die("Selection Error: " . $e->getMessage());
@@ -44,6 +61,43 @@ try {
             font-size: 1.4rem;
         }
 
+        /* Search Bar Styling */
+        .search-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .search-box {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7f8c8d;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .search-box input:focus {
+            border-color: #f28c28;
+            box-shadow: 0 0 8px rgba(242, 140, 40, 0.2);
+        }
+
         /* Table Styling */
         .inventory-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         .inventory-table th {
@@ -64,7 +118,7 @@ try {
         .progress-bar-bg { flex-grow: 1; background: #eee; height: 10px; border-radius: 10px; overflow: hidden; }
         .progress-fill { height: 100%; transition: width 0.5s ease; }
 
-        /* Modal / Popup Styling */
+        /* Modal Styling */
         .modal { 
             display: none; position: fixed; z-index: 1000; 
             left: 0; top: 0; width: 100%; height: 100%; 
@@ -91,41 +145,35 @@ try {
         .modal-body input { 
             width: 100%; padding: 12px; margin-bottom: 15px; 
             border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; 
-            transition: border 0.3s;
         }
-        .modal-body input:focus { border-color: #f28c28; outline: none; }
 
         .btn-submit { 
             width: 100%; padding: 12px; background: #f28c28; color: white; 
-            border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem;
+            border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
         }
-        .btn-submit:hover { background: #d3741b; }
-
-        .close { position: absolute; right: 15px; top: 15px; color: white; cursor: pointer; font-size: 20px; opacity: 0.8; }
-        .close:hover { opacity: 1; }
 
         .refresh-btn {
             background: #f28c28; color: white; border: none; padding: 12px 25px;
             border-radius: 30px; cursor: pointer; font-weight: bold; float: right; margin-top: 20px;
-            box-shadow: 0 4px 10px rgba(242, 140, 40, 0.3);
         }
 
         .action-btn { padding: 8px; border-radius: 6px; text-decoration: none; font-size: 0.9rem; margin: 0 2px; }
         .btn-edit { color: #3498db; }
         .btn-delete { color: #e74c3c; }
+        .close { position: absolute; right: 15px; top: 15px; color: white; cursor: pointer; font-size: 20px; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <aside class="sidebar">
-            <div class="sidebar-header"><i class="fa-solid fa-boxes-stacked"></i> <span>Title</span></div>
-               <nav style="flex-grow: 1;">
+            <div class="sidebar-header"><i class="fa-solid fa-boxes-stacked"></i> <span>Clinic System</span></div>
+            <nav style="flex-grow: 1;">
                 <a href="index.php" class="nav-item"><i class="fa-solid fa-chart-line"></i> <span>Dashboard</span></a>
                 <a href="inventory.php" class="nav-item active"><i class="fa-solid fa-boxes-packing"></i> <span>Inventory</span></a>
                 <a href="supplies.php" class="nav-item"><i class="fa-solid fa-truck-ramp-box"></i> <span>Supplies</span></a>
-                <a href="track&reports.php" class="nav-item"><i class="fa-solid fa-route"></i></i> <span>Track & Reports</span></a>
-                <a href="view_orders.php" class="nav-item "><i class="fa-solid fa-file-invoice-dollar"></i> <span>view orders</span></a>
+                <a href="track&reports.php" class="nav-item"><i class="fa-solid fa-route"></i> <span>Track & Reports</span></a>
+                <a href="view_orders.php" class="nav-item "><i class="fa-solid fa-file-invoice-dollar"></i> <span>View Orders</span></a>
                 <a href="User-management.php" class="nav-item"><i class="fa-solid fa-users"></i> <span>User Management</span></a>
                 <a href="settings.php" class="nav-item"><i class="fa-solid fa-gears"></i> <span>Settings</span></a>
             </nav>
@@ -147,6 +195,13 @@ try {
                 <div class="inventory-card">
                     <h2><i class="fa-solid fa-warehouse"></i> Current Stock Levels</h2>
                     
+                    <div class="search-container">
+                        <form action="inventory.php" method="GET" class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" name="search" value="<?= e($search) ?>" placeholder="Search name or category and press Enter...">
+                        </form>
+                    </div>
+
                     <table class="inventory-table">
                         <thead>
                             <tr>
@@ -190,13 +245,13 @@ try {
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <a href="../add_products/edit_product.php?id=<?= $product['id'] ?>" class="action-btn btn-edit" title="Edit"><i class="fa-solid fa-pen"></i></a>
-                                        <a href="delete_product.php?id=<?= $product['id'] ?>" class="action-btn btn-delete" title="Delete" onclick="return confirm('Delete product?')"><i class="fa-solid fa-trash"></i></a>
+                                        <a href="../add_products/edit_product.php?id=<?= $product['id'] ?>" class="action-btn btn-edit"><i class="fa-solid fa-pen"></i></a>
+                                        <a href="delete_product.php?id=<?= $product['id'] ?>" class="action-btn btn-delete" onclick="return confirm('Delete product?')"><i class="fa-solid fa-trash"></i></a>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <tr><td colspan="8">No products found.</td></tr>
+                                <tr><td colspan="8">No products found matching "<?= e($search) ?>"</td></tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
@@ -213,25 +268,15 @@ try {
                         <div class="modal-body">
                             <form action="../add_products/insert_into.php" method="POST">
                                 <label>Product Name</label>
-                                <input type="text" name="product_name" placeholder="Enter product name" required>
-                                
+                                <input type="text" name="product_name" required>
                                 <label>Category</label>
-                                <input type="text" name="category" placeholder="e.g. Cleaning Supplies" required>
-
+                                <input type="text" name="category" required>
                                 <div style="display: flex; gap: 10px;">
-                                    <div style="flex:1;">
-                                        <label>Price</label>
-                                        <input type="number" name="price" step="0.01" required>
-                                    </div>
-                                    <div style="flex:1;">
-                                        <label>Current Qty</label>
-                                        <input type="number" name="quantity" required>
-                                    </div>
+                                    <div style="flex:1;"><label>Price</label><input type="number" name="price" step="0.01" required></div>
+                                    <div style="flex:1;"><label>Qty</label><input type="number" name="quantity" required></div>
                                 </div>
-
-                                <label>Max Stock Capacity</label>
+                                <label>Max Stock</label>
                                 <input type="number" name="max_quantity" required>
-
                                 <button type="submit" class="btn-submit">Save Product</button>
                             </form>
                         </div>
@@ -242,6 +287,7 @@ try {
     </div>
 
     <script>
+        // UI Logic
         const sidebar = document.querySelector('.sidebar');
         const toggleBtn = document.getElementById('sidebarToggle');
         toggleBtn.addEventListener('click', () => { sidebar.classList.toggle('collapsed'); });
@@ -249,7 +295,6 @@ try {
         function openForm() { document.getElementById("popupForm").style.display = "flex"; }
         function closeForm() { document.getElementById("popupForm").style.display = "none"; }
         
-        // Close modal if user clicks outside of it
         window.onclick = function(event) {
             if (event.target == document.getElementById("popupForm")) closeForm();
         }
